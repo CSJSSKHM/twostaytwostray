@@ -1,0 +1,659 @@
+<title>時空錯信案</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=LXGW+WenKai+TC:wght@400;700&family=Noto+Sans+TC:wght@400;500;700&family=IM+Fell+English:ital@0;1&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: a post-station counter. Top bar of tabs; content is one column of "letters" (paper sheets) with envelope cards for the 11 groups. */
+:root{
+  --bg:#E9ECE4;        /* 驛站牆面：淡青灰紙 */
+  --paper:#F7F8F3;     /* 信紙 */
+  --ink:#1E2731;       /* 墨 */
+  --muted:#5A6570;
+  --line:#C9CFC3;
+  --seal:#A8262A;      /* 印泥紅 */
+  --indigo:#2B4968;    /* 驛站藍 */
+  --ok:#2E6B45;
+  --okbg:#E1EEE4;
+  --warnbg:#F6E9E6;
+  --f-display:"LXGW WenKai TC","Kaiti TC","STKaiti","BiauKai",serif;
+  --f-body:"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;
+  --f-en:"IM Fell English","Georgia",serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#11161D;--paper:#19202A;--ink:#E4E7E0;--muted:#9AA4AE;--line:#2D3846;
+    --seal:#E2615A;--indigo:#93B3D8;--ok:#7CC496;--okbg:#18291F;--warnbg:#2A1B1B;color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#11161D;--paper:#19202A;--ink:#E4E7E0;--muted:#9AA4AE;--line:#2D3846;
+  --seal:#E2615A;--indigo:#93B3D8;--ok:#7CC496;--okbg:#18291F;--warnbg:#2A1B1B;color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{background:var(--bg);color:var(--ink)}
+body{font-family:var(--f-body);font-size:16px;line-height:1.75;padding-inline:16px;padding-block:0 48px}
+h1,h2,h3{font-family:var(--f-display);font-weight:700;text-wrap:balance;line-height:1.3;margin:0}
+p{margin:0}
+.wrap{max-width:920px;margin:0 auto;display:flex;flex-direction:column;gap:24px}
+
+/* top bar */
+.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);border-bottom:1px solid var(--line);margin-inline:-16px;padding:10px 16px}
+.bar-in{max-width:920px;margin:0 auto;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.brand{font-family:var(--f-display);font-size:20px;font-weight:700;display:flex;align-items:center;gap:8px;margin-right:auto}
+.brand .stamp{width:30px;height:30px;border:2px solid var(--seal);color:var(--seal);border-radius:4px;display:grid;place-items:center;font-size:15px;transform:rotate(-6deg)}
+nav{display:flex;gap:4px;flex-wrap:wrap}
+nav button{font:inherit;font-size:15px;background:none;border:1px solid transparent;color:var(--muted);padding:6px 12px;border-radius:999px;cursor:pointer}
+nav button[aria-current="true"]{color:var(--ink);border-color:var(--line);background:var(--paper)}
+nav button:focus-visible,button:focus-visible,input:focus-visible,textarea:focus-visible,.env:focus-visible{outline:2px solid var(--indigo);outline-offset:2px}
+
+/* sheet */
+.sheet{background:var(--paper);border:1px solid var(--line);border-radius:6px;padding:28px clamp(18px,4vw,40px);display:flex;flex-direction:column;gap:16px}
+.eyebrow{font-size:13px;letter-spacing:.12em;color:var(--seal);font-weight:700}
+.lead{font-family:var(--f-display);font-size:clamp(28px,5vw,42px)}
+.prose{max-width:62ch;display:flex;flex-direction:column;gap:12px}
+.muted{color:var(--muted)}
+.btn{font:inherit;font-weight:700;border:0;background:var(--indigo);color:var(--paper);padding:10px 20px;border-radius:6px;cursor:pointer;align-self:flex-start}
+.btn.ghost{background:none;color:var(--indigo);border:1px solid var(--indigo)}
+.btn.seal{background:var(--seal)}
+.row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+
+/* timeline of TSTS phases */
+.phases{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;counter-reset:ph}
+.phase{border-top:3px solid var(--indigo);padding-top:10px;display:flex;flex-direction:column;gap:4px;min-width:0}
+.phase b{font-family:var(--f-display);font-size:18px}
+.phase .t{font-family:var(--f-mono);font-size:13px;color:var(--muted)}
+.phase:nth-child(2),.phase:nth-child(3){border-color:var(--seal)}
+@media (max-width:640px){.phases{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* cast */
+.cast{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.cast div{border-left:2px solid var(--line);padding-left:12px}
+.cast b{font-family:var(--f-display);font-size:17px}
+
+details.key{border:1px dashed var(--line);border-radius:6px;padding:12px 16px}
+details.key summary{cursor:pointer;font-weight:700;color:var(--muted)}
+details.key table{margin-top:10px}
+
+/* envelopes */
+.envs{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px}
+.env{position:relative;text-align:left;font:inherit;color:inherit;background:var(--paper);border:1px solid var(--line);border-radius:4px;padding:16px 16px 18px;cursor:pointer;display:flex;flex-direction:column;gap:6px;min-height:150px;overflow:hidden}
+.env::before{content:"";position:absolute;inset:0 0 auto 0;height:5px;background:repeating-linear-gradient(135deg,var(--seal) 0 10px,transparent 10px 20px,var(--indigo) 20px 30px,transparent 30px 40px);opacity:.75}
+.env:hover{border-color:var(--indigo)}
+.env .no{font-family:var(--f-mono);font-size:12px;color:var(--muted);letter-spacing:.08em}
+.env .subj{font-family:var(--f-display);font-size:22px;font-weight:700}
+.env .role{color:var(--muted);font-size:14px}
+.env .postmark{position:absolute;right:12px;top:16px;width:48px;height:48px;border:2px solid var(--muted);border-radius:50%;display:grid;place-items:center;font-family:var(--f-display);font-size:20px;color:var(--muted);opacity:.7}
+.env.done .postmark{border-color:var(--ok);color:var(--ok);opacity:1}
+.env .status{margin-top:auto;font-size:13px;color:var(--muted)}
+.env.done .status{color:var(--ok);font-weight:700}
+
+/* group page */
+.back{font:inherit;background:none;border:0;color:var(--indigo);cursor:pointer;padding:0;align-self:flex-start}
+.role-head{display:flex;gap:16px;align-items:flex-start}
+.role-head .postmark{flex:none;width:64px;height:64px;border:2px solid var(--seal);color:var(--seal);border-radius:50%;display:grid;place-items:center;font-family:var(--f-display);font-size:28px;transform:rotate(-8deg)}
+.material{border:1px solid var(--line);border-radius:4px;padding:18px;display:flex;flex-direction:column;gap:12px;background:var(--bg)}
+.material h3{font-size:18px}
+.poem{font-family:var(--f-display);font-size:24px;line-height:1.9;letter-spacing:.06em}
+.couplet{display:flex;gap:28px;justify-content:center;font-family:var(--f-display);font-size:24px}
+.couplet .v{writing-mode:vertical-rl;border:1px solid var(--seal);color:var(--seal);padding:12px 6px;letter-spacing:.2em}
+.hengpi{text-align:center;font-family:var(--f-display);font-size:22px;color:var(--seal);letter-spacing:.3em}
+.en{font-family:var(--f-en);font-size:20px;line-height:1.7}
+.en p{margin:0}
+ol.sentences{font-family:var(--f-en);font-size:19px;margin:0;padding-left:1.4em;display:flex;flex-direction:column;gap:6px}
+.tbl{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:15px;font-variant-numeric:tabular-nums}
+th,td{border-bottom:1px solid var(--line);padding:6px 10px;text-align:left;vertical-align:top}
+th{font-size:13px;color:var(--muted);font-weight:700;letter-spacing:.04em}
+td.num,th.num{text-align:right;font-family:var(--f-mono)}
+.mono{font-family:var(--f-mono)}
+.labels{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.vial{border:1px solid var(--line);border-radius:30px 30px 6px 6px;padding:14px 10px;text-align:center;background:var(--paper);display:flex;flex-direction:column;gap:6px;min-width:0}
+.vial b{font-family:var(--f-display);font-size:20px}
+@media (max-width:520px){.labels{grid-template-columns:1fr}}
+.law{display:flex;flex-direction:column;gap:6px;font-size:15px}
+.chips{display:flex;flex-direction:column;gap:8px}
+.chip{display:flex;gap:10px;align-items:baseline;border:1px solid var(--line);border-radius:4px;padding:8px 12px;background:var(--paper)}
+.chip .tag{font-family:var(--f-mono);font-weight:600;color:var(--seal);border:1px solid var(--seal);border-radius:3px;padding:0 6px}
+.staff{color:var(--ink);max-width:100%;height:auto}
+
+.answer{display:flex;flex-direction:column;gap:10px}
+.answer label{font-weight:700}
+.answer .row input{flex:1 1 220px;min-width:0;font:inherit;font-size:18px;padding:10px 12px;border:1px solid var(--line);border-radius:6px;background:var(--paper);color:var(--ink)}
+.msg{font-size:15px;min-height:1.5em}
+.msg.no{color:var(--seal)}
+.hints{display:flex;flex-direction:column;gap:8px}
+.hint{border-left:3px solid var(--indigo);padding:4px 12px;font-size:15px}
+
+/* clue card */
+.clue{border:2px solid var(--ok);background:var(--okbg);border-radius:6px;padding:20px;display:flex;flex-direction:column;gap:10px}
+.clue .tag{font-family:var(--f-display);font-size:15px;color:var(--ok);font-weight:700;letter-spacing:.1em}
+.clue .big{font-family:var(--f-display);font-size:clamp(22px,4vw,30px);line-height:1.5}
+.tsts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.tsts > div{border:1px solid var(--line);border-radius:4px;padding:12px 14px;background:var(--paper);min-width:0;font-size:15px}
+.tsts b{font-family:var(--f-display);font-size:17px;display:block}
+@media (max-width:560px){.tsts{grid-template-columns:1fr}}
+
+/* board */
+.slots{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
+.slot{display:flex;flex-direction:column;gap:6px;min-width:0}
+.slot label{font-size:14px;font-weight:700}
+.slot label span{color:var(--muted);font-weight:400}
+.slot textarea{font:inherit;font-size:15px;min-height:72px;resize:vertical;padding:8px 10px;border:1px solid var(--line);border-radius:4px;background:var(--paper);color:var(--ink)}
+.q{display:flex;flex-direction:column;gap:8px;border-top:1px solid var(--line);padding-top:14px}
+.q h3{font-size:19px}
+.opts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+@media (max-width:560px){.opts{grid-template-columns:1fr}}
+.opt{font:inherit;text-align:left;border:1px solid var(--line);background:var(--paper);color:var(--ink);border-radius:6px;padding:10px 12px;cursor:pointer}
+.opt[aria-pressed="true"]{border-color:var(--indigo);box-shadow:inset 0 0 0 1px var(--indigo)}
+.opt.right{border-color:var(--ok);background:var(--okbg)}
+.opt.wrong{border-color:var(--seal);background:var(--warnbg)}
+.src{font-size:13px;color:var(--muted)}
+.ending{border:2px solid var(--seal);border-radius:6px;padding:24px;display:flex;flex-direction:column;gap:14px;animation:rise .6s ease-out}
+.ending h2{font-size:clamp(24px,4vw,34px);color:var(--seal)}
+@keyframes rise{from{transform:translateY(8px);opacity:.4}to{transform:none;opacity:1}}
+@media (prefers-reduced-motion:reduce){.ending{animation:none}}
+.score{font-family:var(--f-mono);font-size:14px;color:var(--muted)}
+.foot{font-size:13px;color:var(--muted);text-align:center}
+</style>
+
+<header class="bar">
+  <div class="bar-in">
+    <div class="brand"><span class="stamp">驛</span>時空錯信案</div>
+    <nav aria-label="頁面">
+      <button data-go="intro">案情簡介</button>
+      <button data-go="groups">調查組別</button>
+      <button data-go="board">案情板</button>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap" style="margin-top:24px">
+
+<!-- ========== INTRO ========== -->
+<section id="v-intro" class="wrap">
+  <div class="sheet">
+    <div class="eyebrow">劇本殺 · Two Stay Two Stray 合作學習示範</div>
+    <h1 class="lead">羅密歐與祝英台：時空錯信案</h1>
+    <div class="prose">
+      <p>「時光驛站」專門替跨越時空的戀人遞信。維羅納的<b>羅密歐</b>（莎士比亞筆下，約 1595 年）與東晉的<b>祝英台</b>（約公元 400 年）都因一封沒送到的信而錯過一生。驛站給他們一次改寫命運的機會：<b>第七夜子時，在化蝶橋完婚</b>。</p>
+      <p>第七夜過後，羅密歐被發現昏睡在化蝶橋頭，身旁有一個空藥瓶；英台下落不明；驛站的帳簿、關卡紀錄、信件全部錯亂。</p>
+      <p>各位老師是驛站召集的十一組<b>時空調查員</b>。每組只掌握一片線索。單憑一組，誰也看不清真相。</p>
+    </div>
+  </div>
+
+  <div class="sheet">
+    <h2>調查流程</h2>
+    <div class="phases">
+      <div class="phase"><span class="t">約 10 分鐘</span><b>① 組內解謎</b><span>按自己組別的信封，全組合力解開科目謎題，取得「線索卡」。</span></div>
+      <div class="phase"><span class="t">約 12 分鐘</span><b>② Stay 留守</b><span>每組留 2 位組員，向來訪的調查員講解本組線索，並回答提問。</span></div>
+      <div class="phase"><span class="t">同時進行</span><b>③ Stray 出訪</b><span>其餘 3–4 位組員分頭到其他組蒐證，各人負責不同組別，把線索記下。</span></div>
+      <div class="phase"><span class="t">約 8 + 10 分鐘</span><b>④ 回組整合 · 匯報</b><span>出訪者回組，把十一片線索拼在「案情板」，回答六條案情問題，再向全場匯報。</span></div>
+    </div>
+    <p class="muted">出訪建議：十一組無法一一走遍。請 Stray 組員按組號分工，例如第一位去「本組 +1、+2」，第二位去「+3、+4」，如此類推，每站約 5 分鐘。</p>
+    <div class="row"><button class="btn" data-go="groups">進入調查</button><button class="btn ghost" data-go="board">打開案情板</button></div>
+  </div>
+
+  <div class="sheet">
+    <h2>登場人物</h2>
+    <div class="cast">
+      <div><b>羅密歐 Romeo</b><p class="muted">維羅納少年，昏睡於化蝶橋頭。</p></div>
+      <div><b>祝英台</b><p class="muted">東晉才女，第七夜後下落不明。</p></div>
+      <div><b>Balthasar</b><p class="muted">羅密歐的僕人，現任時空郵差。</p></div>
+      <div><b>Friar Laurence</b><p class="muted">維羅納神父，擅長調製藥水。</p></div>
+      <div><b>銀心</b><p class="muted">英台的丫鬟，熟悉東晉時區。</p></div>
+      <div><b>馬文才</b><p class="muted">英台被迫許配的對象，家中守衛眾多。</p></div>
+    </div>
+  </div>
+
+  <details class="key sheet">
+    <summary>主持人答案（講者專用，請勿投影）</summary>
+    <div class="tbl"><table id="keyTable"><thead><tr><th>組別</th><th>答案</th><th>線索</th></tr></thead><tbody></tbody></table></div>
+    <p class="muted" style="margin-top:10px">真相：沒有單一兇手。英台因化蝶橋入夜被守衛封鎖，改約卯時於草橋亭；改期信（第 07 號）以中文寫成，郵差 Balthasar 不懂漢文被拒入關，信被退回；他只能留下「SHE LEFT」的字條。羅密歐誤會，喝下他以為是毒藥的瓶子，其實是沉睡藥，36 小時後會醒。兩齣原著悲劇的共同成因，都是資訊沒有被傳遞和拼合。</p>
+  </details>
+</section>
+
+<!-- ========== GROUPS ========== -->
+<section id="v-groups" class="wrap" hidden>
+  <div class="sheet">
+    <div class="eyebrow">第一階段 · 組內解謎</div>
+    <h2>選擇你的組別信封</h2>
+    <p class="muted">每組只打開自己的信封。解開謎題後，線索卡會蓋上郵戳。</p>
+  </div>
+  <div class="envs" id="envs"></div>
+</section>
+
+<!-- ========== GROUP DETAIL ========== -->
+<section id="v-group" class="wrap" hidden></section>
+
+<!-- ========== BOARD ========== -->
+<section id="v-board" class="wrap" hidden>
+  <div class="sheet">
+    <div class="eyebrow">第四階段 · 回組整合</div>
+    <h2>案情板</h2>
+    <p class="muted">把 Stray 組員帶回來的線索逐格寫下（只儲存在這部裝置）。資料齊全後，回答下面六條案情問題。</p>
+    <div class="slots" id="slots"></div>
+  </div>
+  <div class="sheet" id="quiz">
+    <h2>案情匯報：六條關鍵問題</h2>
+    <div id="qs" style="display:flex;flex-direction:column;gap:16px"></div>
+    <div class="row"><button class="btn seal" id="submitCase">提交案情</button><span class="score" id="score"></span></div>
+    <div id="ending"></div>
+  </div>
+</section>
+
+<p class="foot">時光驛站 · 合作學習工作坊示範</p>
+</main>
+
+<script>
+const GROUPS = [
+{
+  id:'chi1', no:'01', subject:'中文 1', role:'書院夫子', mark:'文',
+  intro:'你是英台女扮男裝求學時的書院夫子。案發後，你在英台的書桌上找到一首詩稿，旁邊註明「第 07 號信底稿」。英台一向喜歡把心事藏在詩裏。',
+  material:`<h3>英台的詩稿</h3>
+  <div class="poem">草色青青送客行，<br>橋頭柳下待君情。<br>亭前莫問更深事，<br>見得晨光便是卿。</div>`,
+  question:'英台把真正的約會地點藏在詩中。她約羅密歐在哪裏見面？',
+  answers:['草橋亭','草橋亭見','草桥亭','草桥亭见'],
+  hints:['古人寫密信，常把秘密放在每一句的同一個位置。','讀每一句的第一個字：草、橋、亭、見。'],
+  topic:'地點',
+  clue:'英台改約的地點不是化蝶橋，而是「草橋亭」（梁祝當年結拜之處）。這首詩是第 07 號信的底稿。'
+},
+{
+  id:'chi2', no:'02', subject:'中文 2', role:'祝府老管家', mark:'聯',
+  intro:'你是祝府的老管家。英台出門前，在房門貼上一副新對聯，橫批有一字被雨水化開了。管家記得小姐說過：「時辰，我寫在門上了。」',
+  material:`<h3>房門對聯</h3>
+  <div class="hengpi">點 ▢ 莫 遲</div>
+  <div class="couplet"><div class="v">玉兔當值始相逢</div><div class="v">更深露重休相候</div></div>
+  <p class="muted">（右為上聯，左為下聯）</p>
+  <h3>管家的備忘：十二時辰</h3>
+  <p>子時由晚上 11 時開始，每個時辰兩小時，依次為：子、丑、寅、卯、辰、巳、午、未、申、酉、戌、亥。<br>十二生肖的次序是：鼠、牛、虎、兔、龍、蛇、馬、羊、猴、雞、狗、豬。</p>`,
+  question:'英台把約會改到哪一個時辰？（寫出時辰名稱）',
+  answers:['卯時','卯','卯时','卯時5至7時','5-7'],
+  hints:['下聯的「玉兔」是哪一個生肖？把生肖和地支一一配對。','兔配卯。橫批缺的字也是「卯」：官府清晨點名叫「點卯」。'],
+  topic:'時辰',
+  clue:'英台改約在「卯時」，即清晨 5:00–7:00；上聯「更深露重休相候」叫羅密歐不要在深夜（原定子時）等候。'
+},
+{
+  id:'eng1', no:'03', subject:'English 1', role:'Verona Town Scribe', mark:'E',
+  intro:'You are the Town Scribe of Verona. This note was found in Romeo’s pocket. It is written by Balthasar, his servant, now a time-postman. It is the only message Romeo read that night.',
+  material:`<h3>Balthasar’s note to Romeo</h3>
+  <div class="en">
+  <p>Sorry, master, I bring ill tidings.</p>
+  <p>Her lantern at the bridge burns no more.</p>
+  <p>Even the old willow stands alone tonight.</p>
+  <p>Lady Zhu was seen walking away at dusk.</p>
+  <p>Every guard at the gate turned me back.</p>
+  <p>For your sake, I wish I knew more.</p>
+  <p>Truly, I could not read her letter.</p>
+  </div>`,
+  question:'Which two-word message did this note leave in Romeo’s mind?',
+  answers:['she left','sheleft'],
+  hints:['Look at the shape of the poem, not only its meaning.','Read the first letter of every line, from top to bottom.'],
+  topic:'誤會',
+  clue:'羅密歐只收到 Balthasar 的字條，藏頭字是「SHE LEFT」，他以為英台拋棄了他。字條最後一句：Balthasar 讀不懂英台的信。'
+},
+{
+  id:'eng2', no:'04', subject:'English 2', role:'Court Clerk', mark:'E',
+  intro:'You are the clerk recording Balthasar’s testimony. The investigators noticed that every sentence contains exactly one grammar mistake. Balthasar insists he “said the reason clearly”.',
+  material:`<h3>Testimony of Balthasar</h3>
+  <ol class="sentences">
+    <li>Yesterday I carry Lady Zhu’s letter from the post station.</li>
+    <li>The handwriting on the envelope was not mine; it was her.</li>
+    <li>The envelope had lost it’s seal in the rain.</li>
+    <li>I could read neither the address or the date.</li>
+    <li>After three nights at the border, I was too exhausting to think.</li>
+    <li>When I told Romeo the news, he says nothing and walked away.</li>
+    <li>I have explain everything I know to the investigators.</li>
+  </ol>
+  <p class="muted">Correct the wrong word in each sentence. Take the first letter of each corrected word, in order.</p>`,
+  question:'Why could Balthasar not read the letter? Type the hidden word.',
+  answers:['chinese'],
+  hints:['Sentence 1 should say “carried”. Sentence 2 should end with “hers”.','carried · hers · its · nor · exhausted · said · explained'],
+  topic:'語言',
+  clue:'Balthasar 供稱：英台的信是用「中文」寫的，他一個字也看不懂，只能憑猜測告訴羅密歐。'
+},
+{
+  id:'rel', no:'05', subject:'倫理與天主教宗教', role:'聽告解的神父', mark:'十',
+  intro:'你是聽 Friar Laurence 辦告解的神父。Laurence 同意把以下內容交給調查員。他說：「愛是含忍的，但我的隱瞞，可能也是悲劇的一部分。」',
+  material:`<h3>Friar Laurence 的告解（節錄）</h3>
+  <p>「我交給羅密歐三個小瓶：一瓶毒藥、一瓶沉睡藥、一瓶清水。我怕他衝動，就在標籤上寫了謎語。三個標籤之中，<b>只有一個寫的是真話</b>。」</p>
+  <div class="labels">
+    <div class="vial"><b>甲瓶</b><span>「乙瓶是毒藥。」</span></div>
+    <div class="vial"><b>乙瓶</b><span>「我不是沉睡藥。」</span></div>
+    <div class="vial"><b>丙瓶</b><span>「我是沉睡藥。」</span></div>
+  </div>
+  <p>現場：羅密歐身旁的空瓶，標籤寫着「乙瓶是毒藥」。</p>`,
+  question:'羅密歐喝下的那一瓶，裝的是甚麼？',
+  answers:['沉睡藥','沉睡药','沉睡','睡藥','安眠藥','sleepingdraught','sleeping'],
+  hints:['逐一假設：如果丙瓶說的是真話，乙瓶的標籤會變成真還是假？','丙不可能說真話；若甲說真話，乙的標籤也會是真話，出現兩句真話。所以只有乙說真話：甲是沉睡藥、乙是清水、丙是毒藥。'],
+  topic:'藥物',
+  clue:'羅密歐喝的是甲瓶，即「沉睡藥」，不是毒藥。他還活着。神父出於善意的隱瞞，反而令真相更難傳達。'
+},
+{
+  id:'sci', no:'06', subject:'科學', role:'曼圖亞藥劑師', mark:'藥',
+  intro:'你是調配沉睡藥的藥劑師。調查員想知道羅密歐何時會醒，好讓英台及時趕到。',
+  material:`<h3>沉睡藥配方卡</h3>
+  <div class="tbl"><table>
+    <tr><th>項目</th><th>數據</th></tr>
+    <tr><td>一整瓶劑量</td><td class="mono">100 mg</td></tr>
+    <tr><td>一整瓶令茱麗葉沉睡</td><td class="mono">42 小時（原著：“two and forty hours”）</td></tr>
+    <tr><td>藥物在血液中的半衰期</td><td class="mono">6 小時</td></tr>
+    <tr><td>甦醒條件</td><td>體內藥量跌至固定臨界值以下</td></tr>
+    <tr><td>羅密歐的劑量</td><td class="mono">半瓶（50 mg）</td></tr>
+  </table></div>`,
+  question:'羅密歐會沉睡多少小時？（只填數字）',
+  answers:['36','36小時','36小时','36h'],
+  hints:['42 小時等於幾多個半衰期？那時體內藥量剩下原來的幾分之幾？','7 個半衰期，剩 100/128 mg。50 mg 要減半幾多次，才會跌到同一水平？'],
+  topic:'甦醒時間',
+  clue:'羅密歐只喝了半瓶，約 36 小時後便會醒。他在第七夜 23:00 喝藥，即第九日上午 11:00 甦醒，英台仍來得及趕到。'
+},
+{
+  id:'math', no:'07', subject:'數學', role:'驛站更夫', mark:'更',
+  intro:'你是驛站的更夫，負責記錄每位旅客到達的時刻。第七夜的記錄被墨水弄污，只剩下幾行算式。',
+  material:`<h3>更夫記錄冊（殘頁）</h3>
+  <ul style="margin:0;padding-left:1.2em;display:flex;flex-direction:column;gap:4px">
+    <li>羅密歐到達化蝶橋的時刻為 <b>R</b> 時，英台到達草橋亭的時刻為 <b>Y</b> 時（24 小時制，都是整點）。</li>
+    <li><b>R</b> 比 <b>Y</b> 的 3 倍多 8。</li>
+    <li><b>R + Y = 28</b></li>
+    <li>羅密歐在第七夜到達；英台在翌日（第八日）到達。</li>
+  </ul>`,
+  question:'兩人到達的時刻相隔多少小時？（只填數字）',
+  answers:['6','6小時','6小时','六'],
+  hints:['列方程：R = 3Y + 8，R + Y = 28。','Y = 5，R = 23。留意跨越午夜：由 23:00 到翌日 05:00 是幾小時？'],
+  topic:'時差',
+  clue:'羅密歐 23:00 在化蝶橋，英台 05:00 在草橋亭。兩人相隔 6 小時、在兩個不同地點苦等，根本不可能碰面。'
+},
+{
+  id:'hum1', no:'08', subject:'人文體藝 1', role:'時空關卡守衛', mark:'關',
+  intro:'你是東晉時區邊境的關卡守衛（國家發展與安全科）。化蝶橋位於東晉時區之內。第七夜有四人申請入境，只有一人被拒，所攜信件依例扣留。',
+  material:`<h3>《時空關卡入境條例》節錄</h3>
+  <div class="law">
+    <p><b>第一條</b>　通行證有效期須涵蓋入境日期。</p>
+    <p><b>第二條</b>　通行證須蓋有「時光驛站」官印。</p>
+    <p><b>第三條</b>　攜帶信件入境者，須能讀寫目的地語言（漢文），以便核查信件內容。</p>
+    <p><b>第四條</b>　違反任何一條者不得入境，所攜信件留關，退回驛站。</p>
+  </div>
+  <h3>第七夜入境申請</h3>
+  <div class="tbl"><table>
+    <tr><th>姓名</th><th>身份</th><th>有效期</th><th>官印</th><th>語言</th><th>攜信</th></tr>
+    <tr><td>銀心</td><td>英台丫鬟</td><td class="mono">第 1–10 夜</td><td>有</td><td>漢文</td><td>否</td></tr>
+    <tr><td>Friar Laurence</td><td>神父</td><td class="mono">第 3–9 夜</td><td>有</td><td>拉丁文、意大利文</td><td>否</td></tr>
+    <tr><td>Balthasar</td><td>時空郵差</td><td class="mono">第 5–9 夜</td><td>有</td><td>意大利文、英文</td><td>是（第 07 號）</td></tr>
+    <tr><td>四九</td><td>梁山伯書僮</td><td class="mono">第 1–8 夜</td><td>有</td><td>漢文</td><td>是（第 03 號）</td></tr>
+  </table></div>`,
+  question:'第七夜被拒入境的是誰？',
+  answers:['balthasar','balthazar','巴爾薩澤','巴尔萨泽','巴爾塔薩','郵差','邮差'],
+  hints:['逐一對照四條條例。特別留意第三條在甚麼情況下才適用。','神父不懂漢文，但他沒有攜帶信件，所以第三條不適用於他。'],
+  topic:'關卡',
+  clue:'郵差 Balthasar 不懂漢文，第七夜被拒入東晉時區；他攜帶的第 07 號信依例留關，退回驛站。'
+},
+{
+  id:'hum2', no:'09', subject:'人文體藝 2', role:'驛站檔案館館員', mark:'史',
+  intro:'你是驛站的檔案館館員（世界歷史科）。被退回的第 07 號信上蓋滿了跨時空郵戳，每個郵戳記着一件歷史事件和一個字母。',
+  material:`<h3>信封上的六個郵戳</h3>
+  <div class="chips">
+    <div class="chip"><span class="tag">S</span><span>司馬睿在建康稱帝，東晉建立</span></div>
+    <div class="chip"><span class="tag">Y</span><span>莎士比亞寫成《羅密歐與茱麗葉》</span></div>
+    <div class="chip"><span class="tag">A</span><span>秦始皇統一六國</span></div>
+    <div class="chip"><span class="tag">R</span><span>唐朝建立</span></div>
+    <div class="chip"><span class="tag">T</span><span>西羅馬帝國滅亡</span></div>
+    <div class="chip"><span class="tag">A</span><span>黑死病席捲歐洲</span></div>
+  </div>
+  <p class="muted">把事件由最早排到最晚，字母會拼出這封信的命運。</p>`,
+  question:'這封信的命運是甚麼？（英文字）',
+  answers:['astray'],
+  hints:['先把中國史和歐洲史各自排好，再合併成一條時間線。','秦統一（前 221）→ 東晉（317）→ 西羅馬亡（476）→ 唐（618）→ 黑死病（1347）→ 莎劇（約 1595）'],
+  topic:'迷途',
+  clue:'郵戳拼出 ASTRAY（迷途）。英台（東晉，約公元 400 年）與羅密歐（約 1595 年）相隔逾千年、語言不通，信件需要有人翻譯和轉述，否則必定迷路。'
+},
+{
+  id:'art', no:'10', subject:'藝術教育', role:'草橋亭琴師', mark:'琴',
+  intro:'你是草橋亭的琴師（音樂、美術）。英台在亭柱上留下一段琴譜，旋律改編自何占豪、陳鋼的《梁祝》小提琴協奏曲（1959）。她說：「懂音名的人，自然看得懂。」',
+  material:`<h3>亭柱上的琴譜（高音譜號）</h3>
+  <svg class="staff" viewBox="0 0 420 120" width="420" role="img" aria-label="高音譜號五線譜，五個音符">
+    <g stroke="currentColor" stroke-width="1.2" fill="none">
+      <line x1="10" y1="40" x2="410" y2="40"/><line x1="10" y1="50" x2="410" y2="50"/><line x1="10" y1="60" x2="410" y2="60"/><line x1="10" y1="70" x2="410" y2="70"/><line x1="10" y1="80" x2="410" y2="80"/>
+      <line x1="410" y1="40" x2="410" y2="80"/><line x1="406" y1="40" x2="406" y2="80"/>
+    </g>
+    <text x="14" y="84" font-size="58" fill="currentColor" font-family="'Noto Music','Bravura','Segoe UI Symbol','Apple Symbols',serif">𝄞</text>
+    <g fill="currentColor" stroke="currentColor" stroke-width="1.4">
+      <ellipse cx="110" cy="55" rx="7" ry="5" transform="rotate(-20 110 55)"/><line x1="103.5" y1="56" x2="103.5" y2="86"/>
+      <ellipse cx="170" cy="65" rx="7" ry="5" transform="rotate(-20 170 65)"/><line x1="176.5" y1="64" x2="176.5" y2="34"/>
+      <ellipse cx="230" cy="70" rx="7" ry="5" transform="rotate(-20 230 70)"/><line x1="236.5" y1="69" x2="236.5" y2="39"/>
+      <ellipse cx="290" cy="80" rx="7" ry="5" transform="rotate(-20 290 80)"/><line x1="296.5" y1="79" x2="296.5" y2="49"/>
+      <ellipse cx="350" cy="85" rx="7" ry="5" transform="rotate(-20 350 85)"/><line x1="356.5" y1="84" x2="356.5" y2="54"/>
+    </g>
+  </svg>`,
+  question:'把五個音的音名順序讀出來，英台想說甚麼？（英文字）',
+  answers:['caged'],
+  hints:['高音譜號：五條線由下而上是 E、G、B、D、F；四個間由下而上是 F、A、C、E。','第一個音在第三間，最後一個音在第一線之下。'],
+  topic:'原因',
+  clue:'琴譜拼出 CAGED（被困）。化蝶橋入夜被馬家守衛封鎖，英台被困，只好把婚約改到清晨的草橋亭。'
+},
+{
+  id:'tech', no:'11', subject:'科技（會計）', role:'驛站會計', mark:'帳',
+  intro:'你是時光驛站的會計。月結時發現第七夜的現金與投遞紀錄對不上：有一封信收了郵費，卻沒有投遞。',
+  material:`<h3>第七夜 郵費收入日記帳</h3>
+  <div class="tbl"><table>
+    <tr><th>編號</th><th>寄件人 → 收件人</th><th class="num">郵費</th></tr>
+    <tr><td class="mono">01</td><td>銀心 → 祝員外</td><td class="num">$12</td></tr>
+    <tr><td class="mono">02</td><td>Friar Laurence → 羅密歐</td><td class="num">$25</td></tr>
+    <tr><td class="mono">03</td><td>四九 → 梁山伯</td><td class="num">$8</td></tr>
+    <tr><td class="mono">04</td><td>Nurse → 茱麗葉</td><td class="num">$15</td></tr>
+    <tr><td class="mono">05</td><td>羅密歐 → 祝英台</td><td class="num">$18</td></tr>
+    <tr><td class="mono">06</td><td>馬文才 → 祝員外</td><td class="num">$40</td></tr>
+    <tr><td class="mono">07</td><td>祝英台 → 羅密歐</td><td class="num">$30</td></tr>
+    <tr><td class="mono">08</td><td>Balthasar → Montague 家</td><td class="num">$22</td></tr>
+    <tr><th colspan="2">收入總額</th><th class="num">$170</th></tr>
+  </table></div>
+  <h3>已投遞紀錄（郵差只記金額）</h3>
+  <p class="mono">$25　$8　$15　$18　$40　$12　$22</p>`,
+  question:'哪一號信收了費卻沒有投遞？（填編號）',
+  answers:['7','07','第7號','第07號','#07'],
+  hints:['先計已投遞紀錄的總額，與收入總額比較，差額是多少？','已投遞總額 $140，差額 $30。日記帳中哪一封信的郵費剛好是 $30？'],
+  topic:'帳目',
+  clue:'第 07 號信（祝英台 → 羅密歐，郵費 $30）已收費但沒有投遞紀錄，這就是英台的改期信。它被關卡退回，至今仍在驛站。'
+}
+];
+
+const QUESTIONS = [
+  {q:'英台真正約羅密歐在哪裏見面？', opts:['化蝶橋','草橋亭','時光驛站','維羅納教堂'], a:1, src:'中文 1'},
+  {q:'婚約改到哪一個時辰？', opts:['子時（23:00–01:00）','卯時（05:00–07:00）','午時（11:00–13:00）','酉時（17:00–19:00）'], a:1, src:'中文 2 · 數學'},
+  {q:'英台為甚麼要改約？', opts:['她改變心意','化蝶橋入夜被守衛封鎖，她被困','她記錯了日子','神父要求她改期'], a:1, src:'藝術教育'},
+  {q:'改期信（第 07 號）為甚麼沒有送到？', opts:['郵差偷懶沒有出門','信以中文寫成，郵差不懂漢文被拒入關，信被退回','信被馬文才截走','羅密歐讀了但不相信'], a:1, src:'English 2 · 人文體藝 1 · 人文體藝 2 · 科技（會計）'},
+  {q:'羅密歐現在情況如何？', opts:['已中毒身亡','喝了沉睡藥，約 36 小時後會醒','已返回維羅納','下落不明'], a:1, src:'English 1 · 倫理與天主教宗教 · 科學'},
+  {q:'誰要為這場悲劇負責？', opts:['Balthasar','馬文才','Friar Laurence','沒有單一兇手：每人只握一片資訊，沒有人把它們拼起來'], a:3, src:'全部十一組'}
+];
+
+/* ---------- storage (convenience only) ---------- */
+const store = {
+  get(k,d){try{const v=localStorage.getItem('tsts:'+k);return v==null?d:JSON.parse(v)}catch(e){return d}},
+  set(k,v){try{localStorage.setItem('tsts:'+k,JSON.stringify(v))}catch(e){}}
+};
+let solved = store.get('solved',{});
+let notes = store.get('notes',{});
+let picks = store.get('picks',{});
+
+const norm = s => {
+  let t = String(s).normalize('NFKC').toLowerCase().replace(/[\s.\-#'’,，。!！?？「」"“”:：]/g,'');
+  if(/^\d+$/.test(t)) t = String(parseInt(t,10));
+  return t;
+};
+const esc = s => String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+/* ---------- views ---------- */
+const views = ['intro','groups','group','board'];
+function show(view, gid){
+  views.forEach(v => document.getElementById('v-'+v).hidden = v!==view);
+  document.querySelectorAll('nav button').forEach(b => b.setAttribute('aria-current', String(b.dataset.go===view || (view==='group' && b.dataset.go==='groups'))));
+  if(view==='groups') renderEnvs();
+  if(view==='group') renderGroup(gid);
+  if(view==='board') renderBoard();
+  window.scrollTo(0,0);
+}
+function route(){
+  const h = location.hash.slice(1);
+  if(h.startsWith('g-') && GROUPS.some(g=>g.id===h.slice(2))) return show('group', h.slice(2));
+  if(views.includes(h) && h!=='group') return show(h);
+  show('intro');
+}
+function go(h){ if(location.hash.slice(1)===h) route(); else location.hash = h; }
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-go]');
+  if(b){ go(b.dataset.go); }
+});
+window.addEventListener('hashchange', route);
+
+/* ---------- envelopes ---------- */
+function renderEnvs(){
+  document.getElementById('envs').innerHTML = GROUPS.map(g => `
+    <button class="env ${solved[g.id]?'done':''}" data-go="g-${g.id}">
+      <span class="no">No. ${g.no}</span>
+      <span class="subj">${esc(g.subject)}</span>
+      <span class="role">${esc(g.role)}</span>
+      <span class="postmark">${solved[g.id]?'✓':esc(g.mark)}</span>
+      <span class="status">${solved[g.id]?'線索已取得：'+esc(g.topic):'未拆封'}</span>
+    </button>`).join('');
+}
+
+/* ---------- group page ---------- */
+function renderGroup(id){
+  const g = GROUPS.find(x=>x.id===id);
+  const el = document.getElementById('v-group');
+  el.innerHTML = `
+  <div class="sheet">
+    <button class="back" data-go="groups">← 返回所有組別</button>
+    <div class="role-head">
+      <div class="postmark">${esc(g.mark)}</div>
+      <div style="display:flex;flex-direction:column;gap:6px;min-width:0">
+        <div class="eyebrow">No. ${g.no} · ${esc(g.subject)}</div>
+        <h2 style="font-size:clamp(24px,4vw,32px)">你的身份：${esc(g.role)}</h2>
+      </div>
+    </div>
+    <p class="prose">${esc(g.intro)}</p>
+    <div class="material">${g.material}</div>
+    <form class="answer" id="ansForm" autocomplete="off">
+      <label for="ans-${g.id}">${esc(g.question)}</label>
+      <div class="row">
+        <input id="ans-${g.id}" type="text" placeholder="輸入答案">
+        <button class="btn" type="submit">核對</button>
+      </div>
+      <div class="msg" id="msg" aria-live="polite"></div>
+    </form>
+    <div class="hints" id="hints"></div>
+    <div class="row"><button class="btn ghost" id="hintBtn" type="button">需要提示</button></div>
+    <div id="clueBox"></div>
+  </div>`;
+  let shown = 0;
+  const hintBtn = el.querySelector('#hintBtn');
+  const hintsEl = el.querySelector('#hints');
+  hintBtn.onclick = () => {
+    if(shown < g.hints.length){
+      hintsEl.insertAdjacentHTML('beforeend', `<div class="hint"><b>提示 ${shown+1}：</b>${esc(g.hints[shown])}</div>`);
+      shown++;
+    }
+    if(shown >= g.hints.length) hintBtn.hidden = true;
+  };
+  el.querySelector('#ansForm').addEventListener('submit', e => {
+    e.preventDefault();
+    const v = el.querySelector('#ans-'+g.id).value;
+    const msg = el.querySelector('#msg');
+    if(!v.trim()){ msg.className='msg no'; msg.textContent='請先輸入答案。'; return; }
+    if(g.answers.map(norm).includes(norm(v))){
+      solved[g.id] = true; store.set('solved', solved);
+      msg.className='msg'; msg.textContent='';
+      showClue(g);
+    } else {
+      msg.className='msg no';
+      msg.textContent='郵戳對不上。再看一次材料，或按「需要提示」。';
+    }
+  });
+  if(solved[g.id]) showClue(g);
+}
+function showClue(g){
+  const box = document.getElementById('clueBox');
+  box.innerHTML = `
+  <div class="clue">
+    <span class="tag">線索卡 · ${esc(g.topic)}</span>
+    <p class="big">${esc(g.clue)}</p>
+  </div>
+  <div class="tsts" style="margin-top:12px">
+    <div><b>Stay 留守的 2 位</b>用自己的話向訪客說明：謎題是甚麼、怎樣解、線索代表甚麼。不要只讀出答案，讓訪客也能向別人轉述。</div>
+    <div><b>Stray 出訪的組員</b>到其他組時問三件事：他們的線索是甚麼？和我們的線索怎樣連接？還有甚麼未解開？回組後寫進「案情板」。</div>
+  </div>
+  <div class="row" style="margin-top:12px"><button class="btn ghost" data-go="board">前往案情板</button></div>`;
+  const input = document.getElementById('ans-'+g.id);
+  if(input && !input.value) input.value = '✓ 已解開';
+}
+
+/* ---------- board ---------- */
+function renderBoard(){
+  const slots = document.getElementById('slots');
+  slots.innerHTML = GROUPS.map(g => `
+    <div class="slot">
+      <label for="note-${g.id}">${esc(g.subject)} <span>· ${esc(g.role)}</span></label>
+      <textarea id="note-${g.id}" placeholder="${solved[g.id]?esc(g.clue):'記下這組的線索'}">${esc(notes[g.id]||'')}</textarea>
+    </div>`).join('');
+  slots.querySelectorAll('textarea').forEach(t => t.addEventListener('input', () => {
+    notes[t.id.slice(5)] = t.value; store.set('notes', notes);
+  }));
+  const qs = document.getElementById('qs');
+  qs.innerHTML = QUESTIONS.map((q,i) => `
+    <div class="q" data-q="${i}">
+      <h3>${i+1}. ${esc(q.q)}</h3>
+      <div class="opts">${q.opts.map((o,j)=>`<button type="button" class="opt" data-j="${j}" aria-pressed="${picks[i]===j}">${esc(o)}</button>`).join('')}</div>
+      <span class="src" hidden>線索來源：${esc(q.src)}</span>
+    </div>`).join('');
+  qs.querySelectorAll('.q').forEach(qEl => {
+    const i = +qEl.dataset.q;
+    qEl.querySelectorAll('.opt').forEach(b => b.onclick = () => {
+      picks[i] = +b.dataset.j; store.set('picks', picks);
+      qEl.querySelectorAll('.opt').forEach(x => { x.setAttribute('aria-pressed', String(x===b)); x.classList.remove('right','wrong'); });
+      qEl.querySelector('.src').hidden = true;
+      document.getElementById('score').textContent = '';
+      document.getElementById('ending').innerHTML = '';
+    });
+  });
+}
+document.getElementById('submitCase').onclick = () => {
+  let right = 0, answered = 0;
+  document.querySelectorAll('#qs .q').forEach(qEl => {
+    const i = +qEl.dataset.q, q = QUESTIONS[i];
+    qEl.querySelectorAll('.opt').forEach(b => b.classList.remove('right','wrong'));
+    if(picks[i] === undefined) return;
+    answered++;
+    const b = qEl.querySelector(`.opt[data-j="${picks[i]}"]`);
+    if(picks[i] === q.a){ right++; b.classList.add('right'); qEl.querySelector('.src').hidden = false; }
+    else b.classList.add('wrong');
+  });
+  const score = document.getElementById('score');
+  const end = document.getElementById('ending');
+  if(answered < QUESTIONS.length){ score.textContent = `還有 ${QUESTIONS.length-answered} 題未作答。`; end.innerHTML=''; return; }
+  score.textContent = `答對 ${right} / ${QUESTIONS.length}`;
+  if(right < QUESTIONS.length){
+    end.innerHTML = `<p class="muted" style="margin-top:12px">紅框的答案與線索不符。派 Stray 組員再出訪一次，問清楚相關組別的線索。</p>`;
+    return;
+  }
+  end.innerHTML = `
+  <div class="ending" style="margin-top:12px">
+    <h2>結案：信，終於送到了</h2>
+    <div class="prose">
+      <p>調查員把十一片線索拼在一起。銀心通曉漢文，持有效通行證，帶着被退回的第 07 號信趕往化蝶橋。</p>
+      <p>第九日上午 11 時，羅密歐在草橋亭醒來，睜開眼看見的第一個人，是英台。</p>
+      <p>莎士比亞的悲劇裏，羅密歐沒有收到神父的信；梁祝的悲劇裏，梁山伯沒有讀懂英台的暗示。兩個故事的兇手從來不是某一個人，而是<b>沒有被分享的資訊</b>。今天這封信送得到，因為有人留下講解（Stay），有人走出去聆聽（Stray），最後有人把碎片拼起來。</p>
+    </div>
+    <h3>給老師的反思</h3>
+    <ol style="margin:0;padding-left:1.3em;display:flex;flex-direction:column;gap:6px">
+      <li>剛才哪一刻，你發現自己的線索「單獨看沒有意義」？</li>
+      <li>Stay 和 Stray 的組員各自需要甚麼能力？在課堂上可以怎樣訓練？</li>
+      <li>你任教的科目中，哪一個課題可以拆成「每組一片拼圖」？</li>
+    </ol>
+  </div>`;
+};
+
+/* answer key */
+document.querySelector('#keyTable tbody').innerHTML = GROUPS.map(g =>
+  `<tr><td>${esc(g.subject)}</td><td class="mono">${esc(g.answers[0].toUpperCase())}</td><td>${esc(g.topic)}</td></tr>`).join('');
+
+route();
+</script>
